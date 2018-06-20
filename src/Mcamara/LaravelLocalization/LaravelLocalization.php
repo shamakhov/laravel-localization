@@ -7,6 +7,7 @@ use Illuminate\Contracts\Routing\UrlRoutable;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Translation\Translator;
 use Illuminate\View\Factory;
@@ -159,7 +160,13 @@ class LaravelLocalization
             // if we reached this point and hideDefaultLocaleInURL is true
             // we have to assume we are routing to a defaultLocale route.
             if ($this->hideDefaultLocaleInURL()) {
-                $this->currentLocale = $this->defaultLocale;
+                if (!Cookie::get('locale') && $this->useAcceptLanguageHeader() && !$this->app->runningInConsole()) {
+                    // use browser locale
+                    $negotiator = new LanguageNegotiator($this->defaultLocale, $this->getSupportedLocales(), $this->request);
+                    $this->currentLocale = $negotiator->negotiateLanguage();
+                } else {
+                    $this->currentLocale = $this->defaultLocale;
+                }
             }
             // but if hideDefaultLocaleInURL is false, we have
             // to retrieve it from the browser...
